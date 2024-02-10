@@ -1,1 +1,52 @@
+-- Create an external table using the Green Taxi Trip Records Data for 2022
+
+  CREATE OR REPLACE EXTERNAL TABLE `dezoomcamp2024-412513.nytaxi.external_green_taxi_tripdata_2022`
+  OPTIONS (
+    format = 'PARQUET',
+    uris = ['gs://mage-zoomcamp-khalil-1/green_taxi_2022']
+  );
+
+-- Create a table in BQ using the Green Taxi Trip Records for 2022 (do not partition or cluster this table).
+
+  CREATE OR REPLACE TABLE `dezoomcamp2024-412513.nytaxi.green_taxi_tripdata_2022` AS
+  SELECT * FROM `dezoomcamp2024-412513.nytaxi.external_green_taxi_tripdata_2022`;
+
+
+-- Create partioned and clustered table
+
+  CREATE OR REPLACE TABLE `dezoomcamp2024-412513.nytaxi.green_taxi_tripdata_2022_partioned_clustered`
+  PARTITION BY lpep_pickup_date
+  CLUSTER BY PULocationID AS
+  SELECT *, date(timestamp_seconds(cast(lpep_pickup_datetime/1000000000 as int64))) as lpep_pickup_date
+  FROM `dezoomcamp2024-412513.nytaxi.external_green_taxi_tripdata_2022`;
+
+
+-- Question 1: What is count of records for the 2022 Green Taxi Data??
+
+  SELECT count(1)  FROM `dezoomcamp2024-412513.nytaxi.external_green_taxi_tripdata_2022`;
+
+-- Question 2: Write a query to count the distinct number of PULocationIDs for the entire dataset on both the tables.
+   What is the estimated amount of data that will be read when this query is executed on the External Table and the Table?
+
+  -- External:
+  SELECT COUNT(DISTINCT PULocationID) FROM `dezoomcamp2024-412513.nytaxi.external_green_taxi_tripdata_2022`;
+  
+  -- Materialized:
+  SELECT COUNT(DISTINCT PULocationID) FROM `dezoomcamp2024-412513.nytaxi.green_taxi_tripdata_2022`;
+
+
+-- Qeustion 3: How many records have a fare_amount of 0?
+  SELECT count(1) FROM `dezoomcamp2024-412513.nytaxi.green_taxi_tripdata_2022` 
+  WHERE fare_amount = 0;
+
+-- Question 5:
+  -- For non-partitioned table
+  SELECT DISTINCT PULocationID FROM `dezoomcamp2024-412513.nytaxi.green_taxi_tripdata_2022`
+  WHERE date(timestamp_seconds(cast(lpep_pickup_datetime/1000000000 as int64))) between '2022-06-01' and '2022-06-30'; 
+
+  -- For partitioned table
+  SELECT DISTINCT PULocationID FROM `dezoomcamp2024-412513.nytaxi.green_taxi_tripdata_2022_partioned_clustered`
+  WHERE lpep_pickup_date between '2022-06-01' and '2022-06-30'; 
+  
+
 
